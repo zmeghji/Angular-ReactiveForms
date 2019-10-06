@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { NgForm, FormGroup, FormControl, FormBuilder, Validators, AbstractControl, ValidatorFn } from '@angular/forms';
+import { NgForm, FormGroup, FormControl, FormBuilder, Validators, AbstractControl, ValidatorFn, FormArray } from '@angular/forms';
 import{debounceTime} from 'rxjs/operators'
 import { Customer } from './customer';
 
@@ -42,6 +42,16 @@ export class CustomerComponent implements OnInit {
   }
   emailMessage: string;
   constructor(private formBuilder : FormBuilder) { }
+  buildAddress():FormGroup{
+    return this.formBuilder.group({
+      'addressType':'home',
+      'street1':'',
+      'street2':'',
+      'city':'',
+      'state':'',
+      'zip':''
+    });
+  }
   ngOnInit() {
     // this.customerForm = new FormGroup({
     //   firstName: new FormControl(),
@@ -53,6 +63,7 @@ export class CustomerComponent implements OnInit {
       'email':['',[ Validators.required, Validators.email]],
       'confirmEmail':['',[ Validators.required, Validators.email]]
     }, {validator: emailMatch})
+    
     this.customerForm = this.formBuilder.group({
       'firstName':['',[ Validators.required, Validators.minLength(3)]],
       'lastName': ['',[ Validators.required, Validators.maxLength(50)]],
@@ -61,7 +72,8 @@ export class CustomerComponent implements OnInit {
       'phoneNumber': '',
       'sendCatalog': true,
       // 'rating':[1,ratingRange]
-      'rating': [1, createRatingRangeValidator(0,10)]
+      'rating': [1, createRatingRangeValidator(0,10)],
+      'addresses': this.formBuilder.array([ this.buildAddress()])
   });
 
     this.customerForm.controls.notificationType.valueChanges.subscribe( notificationType=> {
@@ -73,6 +85,9 @@ export class CustomerComponent implements OnInit {
     .subscribe(emailValue=>{
       this.setMessage(emailControl);
     })
+  }
+  get addresses():FormArray{
+    return <FormArray>this.customerForm.get('addresses');
   }
   setMessage(c: AbstractControl){
     this.emailMessage = '';
@@ -110,5 +125,8 @@ export class CustomerComponent implements OnInit {
   save(customerForm: NgForm) {
     console.log(customerForm.form);
     console.log('Saved: ' + JSON.stringify(customerForm.value));
+  }
+  addAddress(){
+    this.addresses.push(this.buildAddress());
   }
 }
