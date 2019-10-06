@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { NgForm, FormGroup, FormControl, FormBuilder, Validators, AbstractControl, ValidatorFn } from '@angular/forms';
-
+import{debounceTime} from 'rxjs/operators'
 import { Customer } from './customer';
 
 function emailMatch(c: AbstractControl) : {[key:string]:boolean}|null {
@@ -36,6 +36,11 @@ function createRatingRangeValidator(minRating:number, maxRating: number): Valida
 export class CustomerComponent implements OnInit {
   customer = new Customer();
   customerForm : FormGroup;
+  private validationMessages = {
+    required: "Please enter your email address",
+    email: "Please enter a valid email address"
+  }
+  emailMessage: string;
   constructor(private formBuilder : FormBuilder) { }
   ngOnInit() {
     // this.customerForm = new FormGroup({
@@ -58,6 +63,23 @@ export class CustomerComponent implements OnInit {
       // 'rating':[1,ratingRange]
       'rating': [1, createRatingRangeValidator(0,10)]
   });
+
+    this.customerForm.controls.notificationType.valueChanges.subscribe( notificationType=> {
+      this.setNotification(notificationType);
+    })
+    let emailControl = this.customerForm.get('emailGroup.email');
+    emailControl.valueChanges
+    .pipe(debounceTime(1000))
+    .subscribe(emailValue=>{
+      this.setMessage(emailControl);
+    })
+  }
+  setMessage(c: AbstractControl){
+    this.emailMessage = '';
+    if((c.touched||c.dirty)&& c.errors){
+      this.emailMessage = Object.keys(c.errors).map(
+        key => this.validationMessages[key]).join(' ');
+    }
   }
   setNotification(notificationType: string){
     var phoneControl = this.customerForm.get('phoneNumber');
